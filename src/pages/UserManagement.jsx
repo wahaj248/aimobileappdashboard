@@ -1,162 +1,190 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchUsers } from "../store/usersSlice";
+import React, { useEffect, useMemo, useState } from "react";
+import { Plus, RefreshCw } from "lucide-react";
 import { CreateUserModal } from "../components/CreateUserModal";
+import axiosInstance from "../Axios/axiosInstance";
+import { useSelector } from "react-redux";
 
-// Updated UsersSection Component
-const UsersSection = ({
-  users = [],
-  searchValue,
-  onSearchChange,
-  onCreateUserClick,
-  loading = false,
-  error = null,
-}) => {
-  const { user } = useSelector((state) => state?.auth);
-  const dispatch = useDispatch();
-  const roleId = user?.role_id;
-  const [openMenuId, setOpenMenuId] = useState(null);
-  const [editingUser, setEditingUser] = useState(null);
+const UserManagement = () => {
+  const { isAuthenticated } = useSelector((state) => state.auth);
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [searchValue, setSearchValue] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [filter, setFilter] = useState("all"); // all | active | inactive
 
-  const handleDeleteUser = (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this user?");
-    if (!confirmDelete) return;
+  const API_BASE = "https://peru-wasp-681695.hostingersite.com/api/";
 
-    dispatch(deleteUser(id));
-    setOpenMenuId(null);
+  const fetchUsers = async (nextFilter = filter) => {
+    setLoading(true);
+    try {
+      const url =
+        nextFilter === "active"
+          ? `${API_BASE}users/active`
+          : nextFilter === "inactive"
+          ? `${API_BASE}users/inactive`
+          : `${API_BASE}all-users`;
+
+      const res = await axiosInstance.get(url);
+      setUsers(Array.isArray(res?.data?.data) ? res.data.data : []);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEditUser = (user) => {
-    console.log("Editing user:", user);
-    setEditingUser(user);
-    setOpenMenuId(null);
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const t = setTimeout(() => fetchUsers(filter), 1000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, isAuthenticated]);
+
+  const filteredUsers = useMemo(() => {
+    const list = users && users.length > 0 ? users : [];
+    if (!searchValue.trim()) return list;
+    const q = searchValue.toLowerCase();
+    return list.filter(
+      (u) =>
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q))
+    );
+  }, [users, searchValue]);
+
+  const handleToggleStatus = async (user) => {
+    const nextStatus = user.status === "active" ? "inactive" : "active";
+    setLoading(true);
+    try {
+      await axiosInstance.post(`${API_BASE}users/${user.id}/toggle`, { status: nextStatus });
+      await fetchUsers(filter);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCloseModal = () => {
-    setEditingUser(null);
     setShowCreateModal(false);
   };
 
   return (
-    <>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4 relative overflow-hidden">
-        <div className="absolute bottom-6 right-6 w-28 h-28 bg-indigo-100 opacity-70 blur-3xl rounded-full pointer-events-none z-0" />
-        <div className="flex justify-between items-center">
-          <h2 className="font-semibold text-gray-800 text-lg">Users</h2>
-          <button className="text-sm bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full hover:bg-indigo-100 transition">
-            View activity log
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">User Management</h1>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => fetchUsers(filter)}
+            disabled={loading}
+            className="flex items-center gap-2 border px-4 py-2 rounded-lg hover:bg-gray-50 transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Refresh"
+          >
+            <RefreshCw size={18} /> Refresh
           </button>
-        </div>
-
-        <div>
-          <label className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-1 inline-block">
-            Enter name
-          </label>
-          <input
-            type="text"
-            placeholder="Enter name"
-            value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </div>
-
-        <div className="space-y-3 relative z-10 h-[35rem] overflow-y-scroll">
-          {loading ? (
-            <p className="text-sm text-gray-500 text-center py-4">
-              Loading users...
-            </p>
-          ) : error ? (
-            <p className="text-sm text-red-500 text-center py-4">
-              {error}
-            </p>
-          ) : users.length > 0 ? (
-            users.map((user, i) => {
-              const userName = typeof user === 'object' ? user.name : user;
-              const userEmail = typeof user === 'object' ? user.email : '';
-              const userInitial = userName ? userName.charAt(0).toUpperCase() : '?';
-              const userId = typeof user === 'object' ? user.id : i;
-              
-              return (
-                <div
-                  key={userId}
-                  className="relative flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2"
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center text-white font-medium text-sm"
-                      style={{
-                        backgroundColor: `hsl(${(i * 45) % 360}, 70%, 55%)`,
-                      }}
-                    >
-                      {userInitial}
-                    </div>
-
-                    <div>
-                      <p className="text-gray-700 font-medium text-sm">{userName}</p>
-                      {userEmail && (
-                        <p className="text-xs text-gray-500">{userEmail}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <MoreVertical
-                      size={16}
-                      className="text-gray-400 cursor-pointer"
-                      onClick={() =>
-                        setOpenMenuId(openMenuId === userId ? null : userId)
-                      }
-                    />
-
-                    {openMenuId === userId && (
-                      <div className="absolute right-0 top-6 z-10 w-28 bg-white border rounded-lg shadow-md">
-                        <button
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100"
-                          onClick={() => handleEditUser(user)}
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                          onClick={() => handleDeleteUser(userId)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <p className="text-sm text-gray-500 text-center py-4">
-              No users found.
-            </p>
-          )}
-        </div>
-        
-        {[1, 2].includes(roleId) && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="absolute bottom-40 right-8 z-30 flex items-center justify-center rounded-full drop-shadow-xl hover:scale-105 transition"
+            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-sm font-medium"
+            title="Local modal (API not provided)"
           >
-            <img src={addUserIcon} alt="Add user" className="w-16 h-16" />
+            <Plus size={18} /> Add User
           </button>
-        )}
+        </div>
       </div>
 
-      {/* Modals */}
-      {showCreateModal && (
-        <CreateUserModal onClose={handleCloseModal} />
-      )}
-      {editingUser && (
-        <CreateUserModal onClose={handleCloseModal} editUser={editingUser} />
-      )}
-    </>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex flex-col md:flex-row md:items-center gap-3 md:justify-between">
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            className="w-full md:max-w-md border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          />
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                filter === "all" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilter("active")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                filter === "active" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => setFilter("inactive")}
+              className={`px-3 py-2 rounded-lg text-sm font-medium ${
+                filter === "inactive" ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+            >
+              Inactive
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-4">#</th>
+                <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-4">Name</th>
+                <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-4">Email</th>
+                <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-4">Status</th>
+                <th className="text-right text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user, index) => (
+                  <tr key={user.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm text-gray-600">{index + 1}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-800">{user.name || "—"}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{user.email || "—"}</td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          user.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-700"
+                        }`}
+                      >
+                        {user.status || "—"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleToggleStatus(user)}
+                          disabled={loading}
+                          className={`px-3 py-2 rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
+                            user.status === "active"
+                              ? "bg-red-50 text-red-700 hover:bg-red-100"
+                              : "bg-green-50 text-green-700 hover:bg-green-100"
+                          }`}
+                          title="Toggle active/inactive"
+                        >
+                          {user.status === "active" ? "Deactivate" : "Activate"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500 text-sm">
+                    {loading ? "Loading..." : "No users found."}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {showCreateModal && <CreateUserModal onClose={handleCloseModal} />}
+    </div>
   );
 };
 
-export default UsersSection;
+export default UserManagement;

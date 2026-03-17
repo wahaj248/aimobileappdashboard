@@ -3,6 +3,10 @@ import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import authReducer from './authSlice';
 import usersReducer from './usersSlice';
+import subscriptionsReducer from './subscriptionsSlice';
+import plansReducer from './plansSlice';
+import paymentsReducer from './paymentsSlice';
+import trialReducer from './trialSlice';
 
 // Persist configuration for auth
 const authPersistConfig = {
@@ -20,6 +24,10 @@ export const store = configureStore({
   reducer: {
     auth: persistedAuthReducer,
     users: usersReducer,
+    subscriptions: subscriptionsReducer,
+    plans: plansReducer,
+    payments: paymentsReducer,
+    trial: trialReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

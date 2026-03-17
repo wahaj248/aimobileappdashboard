@@ -1,116 +1,62 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axiosInstance from '../Axios/axiosInstance';
+import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   user: null,
   token: null,
-    storeId: null, 
   isAuthenticated: false,
-  loginloading: false,
   loading: false,
   error: null,
 };
-
-// Login async thunk
-export const login = createAsyncThunk(
-  'auth/login',
-  async (credentials, { rejectWithValue }) => {
-    try {
-      const response = await axiosInstance.post('auth/login', credentials);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || 'Login failed'
-      );
-    }
-  }
-);
-
-// Register async thunk
-export const register = createAsyncThunk(
-  'auth/register',
-  async (userData, { rejectWithValue }) => {
-    try {
-      const response = await axiosInstance.post('auth/register', userData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || error.message || 'Registration failed'
-      );
-    }
-  }
-);
-
-
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-        // ✅ Store select (manual)
-    setStoreId: (state, action) => {
-      state.storeId = action.payload; // payload = storeId
+    setLoginLoading: (state, action) => {
+      state.loading = action.payload ?? true;
+      if (action.payload === false) state.error = null;
     },
-
-    // ✅ Store remove
-    clearStore: (state) => {
-      state.storeId = null;
+    setLoginError: (state, action) => {
+      state.error = action.payload;
+      state.loading = false;
     },
-    // Manual logout (without API call)
+    setLoginSuccess: (state, action) => {
+      const payload = action.payload || {};
+      state.user = payload.user ?? payload.data?.user ?? payload.data ?? null;
+      state.token = payload.token ?? payload.data?.token ?? payload.access_token ?? null;
+      state.isAuthenticated = !!(state.user && state.token);
+      state.error = null;
+      state.loading = false;
+    },
+    setProfileSuccess: (state, action) => {
+      const payload = action.payload || {};
+      const profile = payload.data ?? payload.user ?? payload ?? null;
+      if (profile) {
+        state.user = profile;
+        state.isAuthenticated = !!(state.user && state.token);
+      }
+    },
     logoutManual: (state) => {
       state.user = null;
       state.token = null;
-      state.storeId = null;
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;
-      localStorage.removeItem('persist:auth');
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('persist:auth');
+        } catch (_) {}
+      }
     },
-  },
-  extraReducers: (builder) => {
-    // Login reducers
-    builder
-      .addCase(login.pending, (state) => {
-        state.loginloading = true;
-        state.error = null;
-      })
-      .addCase(login.fulfilled, (state, action) => {
-        state.loginloading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.data || action.payload.data?.user;
-        state.token = action.payload.token || action.payload.data?.token;
-        state.error = null;
-      })
-      .addCase(login.rejected, (state, action) => {
-        state.loginloading = false;
-        state.isAuthenticated = false;
-        state.user = null;
-        state.token = null;
-        state.error = action.payload;
-      })
-      // Register reducers
-      .addCase(register.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(register.fulfilled, (state) => {
-        state.loading = false;
-        state.error = null;
-      })
-      .addCase(register.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      });
   },
 });
 
 export const {
+  setLoginLoading,
+  setLoginError,
+  setLoginSuccess,
+  setProfileSuccess,
   logoutManual,
-  updateUser,
-    setStoreId,     
-  clearStore,    
-  clearError,
 } = authSlice.actions;
 
 export default authSlice.reducer;
-

@@ -3,13 +3,13 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "../store/authSlice";
+import axiosInstance from "../Axios/axiosInstance";
+import { setLoginLoading, setLoginError, setLoginSuccess } from "../store/authSlice";
 
 const Login = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { loginloading, error, isAuthenticated } = useSelector((state) => state.auth);
-  
+  const { isAuthenticated, error, loading } = useSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
   const {
     register,
@@ -17,15 +17,37 @@ const Login = () => {
     formState: { errors },
   } = useForm();
 
-  // Redirect to dashboard on successful login
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/store");
+      navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
 
   const onSubmit = async (data) => {
-    dispatch(login(data));
+    dispatch(setLoginLoading(true));
+    try {
+      const response = await axiosInstance.post("admin-login", {
+        email: data.email,
+        password: data.password,
+      });
+      const responseData = response?.data;
+      console.log("Login API response:", responseData);
+      if (responseData) {
+        dispatch(setLoginSuccess(responseData));
+      } else {
+        dispatch(setLoginError("Invalid response from server."));
+      }
+    } catch (err) {
+      const errData = err?.response?.data;
+      console.log("Login API error:", err?.response?.status, errData);
+      const message =
+        errData?.message ||
+        errData?.error ||
+        (typeof errData === "string" ? errData : null) ||
+        err?.message ||
+        "Login failed.";
+      dispatch(setLoginError(message));
+    }
   };
 
   return (
@@ -33,7 +55,7 @@ const Login = () => {
       <div className="bg-white shadow-lg rounded-2xl p-8 w-[25%] text-center">
         <div className="flex justify-center mb-6">
           <div className="bg-indigo-600 w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-            S
+            AP
           </div>
         </div>
 
@@ -77,20 +99,14 @@ const Login = () => {
                 className={`w-full border rounded-lg px-4 py-2 pr-10 focus:ring-2 focus:ring-indigo-500 outline-none ${
                   errors.password ? "border-red-500" : "border-gray-300"
                 }`}
-                {...register("password", {
-                  required: "Password is required",
-                })}
+                {...register("password", { required: "Password is required" })}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
               >
-                {showPassword ? (
-                  <EyeOff size={20} />
-                ) : (
-                  <Eye size={20} />
-                )}
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
             <div className="h-5">
@@ -106,7 +122,6 @@ const Login = () => {
             </Link>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
@@ -115,10 +130,10 @@ const Login = () => {
 
           <button
             type="submit"
-            disabled={loginloading}
+            disabled={loading}
             className="w-full bg-indigo-600 text-white py-2 rounded-lg font-semibold hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loginloading ? "Logging in..." : "Login"}
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
       </div>
