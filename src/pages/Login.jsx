@@ -5,6 +5,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import axiosInstance from "../Axios/axiosInstance";
 import { setLoginLoading, setLoginError, setLoginSuccess } from "../store/authSlice";
+import appLogo from "../assets/appLogo.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -54,9 +55,7 @@ const Login = () => {
     <div className="flex items-center justify-center bg-gray-50 h-screen w-full min-w-full">
       <div className="bg-white shadow-lg rounded-2xl p-8 w-[25%] text-center">
         <div className="flex justify-center mb-6">
-          <div className="bg-indigo-600 w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-            AP
-          </div>
+          <img src={appLogo} alt="App logo" className="w-52 h-32 rounded-xl object-contain bg-white" />
         </div>
 
         <h2 className="text-2xl font-semibold text-gray-800 mb-2">Welcome Back</h2>

@@ -4,6 +4,7 @@ import { LogOut, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutManual, setProfileSuccess } from "../store/authSlice";
 import axiosInstance from "../Axios/axiosInstance";
+import appLogo from "../assets/appLogo.png";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -48,9 +49,7 @@ const Header = () => {
         <div className="flex items-center gap-6">
           <Link to="/dashboard">
             <div className="flex items-center gap-3">
-              <div className="bg-indigo-600 w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                AP
-              </div>
+              <img src={appLogo} alt="App logo" className="w-20 h-20 rounded-lg object-contain bg-white" />
               <div className="leading-tight">
                 <div className="text-sm font-semibold text-gray-900">Admin Portal</div>
                 <div className="text-[11px] text-gray-500">Control panel</div>
