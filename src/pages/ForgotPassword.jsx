@@ -10,17 +10,7 @@ const ForgotPassword = () => {
   } = useForm();
 
   const onSubmit = async (data) => {
-    // Console log the form data
-    console.log("Forgot Password Form Data:", data);
-    
-    // Here you can add API call later
-    // Example:
-    // try {
-    //   const response = await axiosInstance.post('/auth/forgot-password', data);
-    //   // Handle success
-    // } catch (error) {
-    //   // Handle error
-    // }
+    console.log("Forgot password form data:", data);
   };
 
   return (

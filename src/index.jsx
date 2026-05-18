@@ -8,13 +8,11 @@ import "react-toastify/dist/ReactToastify.css";
 import { store, persistor } from "./store/store";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
-import Dashboard from "./pages/Dashboard";
 import UserManagement from "./pages/UserManagement";
-import Subscriptions from "./pages/Subscriptions";
 import OrderDetails from "./pages/OrderDetails";
-import ChangePassword from "./pages/ChangePassword";
 import Profile from "./pages/Profile";
 import Layout from "./components/Layout";
+import AuthSync from "./components/AuthSync";
 import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
@@ -22,15 +20,14 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <BrowserRouter>
+          <AuthSync />
           <Routes>
             <Route path="/" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
 
-            <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
+            <Route path="/dashboard" element={<Navigate to="/users" replace />} />
             <Route path="/users" element={<Layout><UserManagement /></Layout>} />
-            <Route path="/subscriptions" element={<Layout><Subscriptions /></Layout>} />
             <Route path="/order/:id" element={<Layout><OrderDetails /></Layout>} />
-            <Route path="/change-password" element={<Layout><ChangePassword /></Layout>} />
             <Route path="/profile" element={<Layout><Profile /></Layout>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

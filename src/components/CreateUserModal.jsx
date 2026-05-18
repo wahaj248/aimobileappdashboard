@@ -1,11 +1,7 @@
 import React, { useState } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
-import { useDispatch } from "react-redux";
-import { addUser, updateUserLocal } from "../store/usersSlice";
-import { toast } from "react-toastify";
 
-export const CreateUserModal = ({ onClose, editUser = null }) => {
-  const dispatch = useDispatch();
+export const CreateUserModal = ({ onClose, editUser = null, onUserAdded }) => {
   const isEditMode = !!editUser;
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -42,12 +38,20 @@ export const CreateUserModal = ({ onClose, editUser = null }) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    if (isEditMode) {
-      dispatch(updateUserLocal({ id: editUser.id, name: formData.name.trim(), email: formData.email.trim() }));
-      toast.success("User updated.");
-    } else {
-      dispatch(addUser({ name: formData.name.trim(), email: formData.email.trim() }));
-      toast.success("User created.");
+    console.log("Create / edit user form:", {
+      mode: isEditMode ? "edit" : "create",
+      ...formData,
+      password: formData.password ? "[filled]" : "",
+      confirmPassword: formData.confirmPassword ? "[filled]" : "",
+    });
+
+    if (!isEditMode && typeof onUserAdded === "function") {
+      onUserAdded({
+        id: Date.now(),
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        status: "active",
+      });
     }
     onClose();
   };

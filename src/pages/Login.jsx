@@ -3,9 +3,25 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import axiosInstance from "../Axios/axiosInstance";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase";
+import { buildAuthPayloadFromFirebaseUser } from "../lib/firebaseAuthPayload";
+import { getCurrentUserData } from "../lib/getCurrentUserData";
 import { setLoginLoading, setLoginError, setLoginSuccess } from "../store/authSlice";
 import appLogo from "../assets/appLogo.png";
+
+const firebaseErrMessage = (err) => {
+  const code = err?.code || "";
+  const map = {
+    "auth/invalid-email": "Invalid email address.",
+    "auth/user-disabled": "This account has been disabled.",
+    "auth/user-not-found": "No account found with this email.",
+    "auth/wrong-password": "Incorrect password.",
+    "auth/invalid-credential": "Invalid email or password.",
+    "auth/too-many-requests": "Too many attempts. Try again later.",
+  };
+  return map[code] || err?.message || "Login failed.";
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -20,34 +36,34 @@ const Login = () => {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/dashboard");
+      navigate("/users");
     }
   }, [isAuthenticated, navigate]);
 
   const onSubmit = async (data) => {
+    console.log("Login form data:", data);
     dispatch(setLoginLoading(true));
     try {
-      const response = await axiosInstance.post("admin-login", {
-        email: data.email,
-        password: data.password,
-      });
-      const responseData = response?.data;
-      console.log("Login API response:", responseData);
-      if (responseData) {
-        dispatch(setLoginSuccess(responseData));
-      } else {
-        dispatch(setLoginError("Invalid response from server."));
-      }
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const fbUser = userCredential.user;
+      const idToken = await fbUser.getIdToken();
+      const idTokenResult = await fbUser.getIdTokenResult();
+
+      console.log("Firebase login — UserCredential:", userCredential);
+      console.log("Firebase login — user:", fbUser);
+      console.log("Firebase login — idToken:", idToken);
+      console.log("Firebase login — idTokenResult:", idTokenResult);
+
+      const payload = buildAuthPayloadFromFirebaseUser(fbUser, idToken, idTokenResult);
+      console.log("Firebase login — Redux / persist payload:", payload);
+      dispatch(setLoginSuccess(payload));
+
+      const userData = await getCurrentUserData();
+      console.log("getCurrentUserData():", userData);
+      console.log("userData.role:", userData?.role);
     } catch (err) {
-      const errData = err?.response?.data;
-      console.log("Login API error:", err?.response?.status, errData);
-      const message =
-        errData?.message ||
-        errData?.error ||
-        (typeof errData === "string" ? errData : null) ||
-        err?.message ||
-        "Login failed.";
-      dispatch(setLoginError(message));
+      console.log("Firebase login error:", err);
+      dispatch(setLoginError(firebaseErrMessage(err)));
     }
   };
 
@@ -134,6 +150,7 @@ const Login = () => {
           >
             {loading ? "Logging in..." : "Login"}
           </button>
+
         </form>
       </div>
     </div>

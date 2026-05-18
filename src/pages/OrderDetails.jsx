@@ -97,7 +97,7 @@ const OrderDetails = () => {
     <>
       <header className="flex justify-between items-center mb-8">
         <div className="flex items-center gap-3">
-          <button onClick={() => navigate("/dashboard")} className="p-2 hover:bg-gray-100 rounded-lg">
+          <button onClick={() => navigate("/users")} className="p-2 hover:bg-gray-100 rounded-lg">
             <FaArrowLeft className="text-gray-600" />
           </button>
           <h1 className="text-2xl font-semibold text-gray-700">Order #{id || STATIC_ORDER.orderId}</h1>

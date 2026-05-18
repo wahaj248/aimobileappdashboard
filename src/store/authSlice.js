@@ -3,6 +3,8 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   user: null,
   token: null,
+  /** Serializable Firebase identity / token meta (REST-style fields where applicable) */
+  firebaseAuth: null,
   isAuthenticated: false,
   loading: false,
   error: null,
@@ -23,7 +25,10 @@ const authSlice = createSlice({
     setLoginSuccess: (state, action) => {
       const payload = action.payload || {};
       state.user = payload.user ?? payload.data?.user ?? payload.data ?? null;
-      state.token = payload.token ?? payload.data?.token ?? payload.access_token ?? null;
+      state.token = payload.token ?? payload.data?.token ?? payload.access_token ?? payload.idToken ?? null;
+      if (payload.firebaseAuth !== undefined) {
+        state.firebaseAuth = payload.firebaseAuth;
+      }
       state.isAuthenticated = !!(state.user && state.token);
       state.error = null;
       state.loading = false;
@@ -39,6 +44,7 @@ const authSlice = createSlice({
     logoutManual: (state) => {
       state.user = null;
       state.token = null;
+      state.firebaseAuth = null;
       state.isAuthenticated = false;
       state.loading = false;
       state.error = null;

@@ -1,75 +1,60 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { LogOut, X } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { logoutManual, setProfileSuccess } from "../store/authSlice";
-import axiosInstance from "../Axios/axiosInstance";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebase";
+import { logoutManual } from "../store/authSlice";
 import appLogo from "../assets/appLogo.png";
 
 const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
+  const { user } = useSelector((state) => state.auth);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    let cancelled = false;
-    const t = setTimeout(() => {
-      (async () => {
-        try {
-          const res = await axiosInstance.get("profile");
-          if (!cancelled) dispatch(setProfileSuccess(res?.data));
-        } catch (_) {
-          // ignore
-        }
-      })();
-    }, 1000);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [dispatch, isAuthenticated]);
 
   const handleLogout = async () => {
     try {
-      await axiosInstance.post("logout");
-    } catch (_) {
-      // Even if API fails, proceed with local logout.
-    } finally {
-      dispatch(logoutManual());
-      setShowLogoutModal(false);
-      navigate("/");
+      await signOut(auth);
+      console.log("Firebase signOut completed");
+    } catch (err) {
+      console.log("Firebase signOut error:", err);
     }
+    dispatch(logoutManual());
+    setShowLogoutModal(false);
+    navigate("/");
   };
 
   return (
     <>
-      <header className="flex items-center justify-between mb-10 relative bg-[#FFFFFF] px-6 md:px-10 py-6">
-        <div className="flex items-center gap-6">
-          <Link to="/dashboard">
-            <div className="flex items-center gap-3">
-              <img src={appLogo} alt="App logo" className="w-20 h-20 rounded-lg object-contain bg-white" />
-              <div className="leading-tight">
+      <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-10 relative bg-[#FFFFFF] px-6 md:px-10 py-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap sm:gap-4 min-w-0">
+          <Link to="/users" className="shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <img src={appLogo} alt="App logo" className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-contain bg-white" />
+              <div className="leading-tight min-w-0">
                 <div className="text-sm font-semibold text-gray-900">Admin Portal</div>
                 <div className="text-[11px] text-gray-500">Control panel</div>
               </div>
             </div>
           </Link>
-          <nav className="flex items-center gap-4">
-            <Link to="/dashboard" className="text-sm font-medium text-gray-700 hover:text-indigo-600">Dashboard</Link>
-            <Link to="/users" className="text-sm font-medium text-gray-700 hover:text-indigo-600">Users</Link>
-            <Link to="/subscriptions" className="text-sm font-medium text-gray-700 hover:text-indigo-600">Subscriptions</Link>
-            <Link to="/profile" className="text-sm font-medium text-gray-700 hover:text-indigo-600">Profile</Link>
-            <Link to="/change-password" className="text-sm font-medium text-gray-700 hover:text-indigo-600">Change Password</Link>
+          <nav className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+            <Link to="/users" className="font-medium text-gray-700 hover:text-indigo-600 whitespace-nowrap">Users</Link>
+            <Link to="/profile" className="font-medium text-gray-700 hover:text-indigo-600 whitespace-nowrap">Profile</Link>
           </nav>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-indigo-500 text-white flex items-center justify-center font-semibold">
-            {user?.name?.[0] || "U"}
-          </div>
-          <span className="font-medium text-gray-800 text-sm">{user?.name || "User"}</span>
+        <div className="flex items-center gap-3 shrink-0">
+          <Link
+            to="/profile"
+            className="flex items-center gap-3 rounded-lg px-2 py-1 -mx-2 hover:bg-gray-50 transition"
+            title="Open profile"
+          >
+            <div className="w-9 h-9 rounded-full bg-indigo-500 text-white flex items-center justify-center font-semibold">
+              {user?.name?.[0] || "U"}
+            </div>
+            <span className="font-medium text-gray-800 text-sm max-w-[140px] truncate">{user?.name || "User"}</span>
+          </Link>
           <button
             onClick={() => setShowLogoutModal(true)}
             className="p-2 hover:bg-gray-100 rounded-full transition"
