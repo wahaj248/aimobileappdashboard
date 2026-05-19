@@ -5,7 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 import { logoutManual } from "../store/authSlice";
-import appLogo from "../assets/appLogo.png";
+import appLogo from "../assets/app_icon.png";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ const Header = () => {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap sm:gap-4 min-w-0">
           <Link to="/users" className="shrink-0">
             <div className="flex items-center gap-2 sm:gap-3">
-              <img src={appLogo} alt="App logo" className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-contain bg-white" />
+              <img src={appLogo} alt="App logo" className="h-10 w-10 sm:h-11 sm:w-11 rounded-xl object-contain" />
               <div className="leading-tight min-w-0">
                 <div className="text-sm font-semibold text-gray-900">Admin Portal</div>
                 <div className="text-[11px] text-gray-500">Control panel</div>

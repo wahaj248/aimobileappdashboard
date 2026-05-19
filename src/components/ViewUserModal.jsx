@@ -50,8 +50,8 @@ export const ViewUserModal = ({ detail, onClose }) => {
             <dl className="grid grid-cols-1 sm:grid-cols-[minmax(9rem,12rem)_1fr] divide-y divide-gray-100 text-sm sm:divide-y-0">
               {rowKeys.map((key) => (
                 <React.Fragment key={key}>
-                  <dt className="border-gray-100 bg-gray-50 px-4 py-3 font-mono text-xs font-medium text-gray-600 sm:border-b sm:border-r">
-                    {key}
+                  <dt className="border-gray-100 bg-gray-50 px-4 py-3 text-xs font-medium text-gray-600 sm:border-b sm:border-r">
+                    {key === "height" ? "Height" : key === "id" ? "User ID" : key}
                   </dt>
                   <dd className="border-gray-100 px-4 py-3 text-gray-900 break-words sm:border-b">
                     {key === "id" ? (

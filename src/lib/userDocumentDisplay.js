@@ -22,6 +22,29 @@ export function toDisplayDate(v) {
   return null;
 }
 
+/** @param {unknown} cm */
+export function parseHeightCm(cm) {
+  const n = typeof cm === "string" ? parseFloat(cm.trim()) : Number(cm);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return n;
+}
+
+/** @param {unknown} cm */
+export function formatHeightFromCm(cm) {
+  const n = parseHeightCm(cm);
+  if (n == null) return "—";
+  const totalInches = n / 2.54;
+  let feet = Math.floor(totalInches / 12);
+  let inches = Math.round(totalInches - feet * 12);
+  if (inches === 12) {
+    feet += 1;
+    inches = 0;
+  }
+  const cmRounded = Math.round(n);
+  if (inches === 0) return `${feet} ft (${cmRounded} cm)`;
+  return `${feet} ft ${inches} in (${cmRounded} cm)`;
+}
+
 /** Deep-serialize for JSON preview (timestamps → locale / readable). */
 export function deepSerializeForDisplay(input) {
   if (input == null) return input;
@@ -42,6 +65,7 @@ export function deepSerializeForDisplay(input) {
  */
 export function formatFieldValue(key, v) {
   if (v === undefined || v === null || v === "") return "—";
+  if (key.toLowerCase() === "height") return formatHeightFromCm(v);
   const dateStr = toDisplayDate(v);
   if (dateStr) return dateStr;
   if (typeof v === "boolean") return v ? "Yes" : "No";

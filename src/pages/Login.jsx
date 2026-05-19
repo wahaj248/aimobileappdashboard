@@ -8,7 +8,7 @@ import { auth } from "../firebase";
 import { buildAuthPayloadFromFirebaseUser } from "../lib/firebaseAuthPayload";
 import { getCurrentUserData } from "../lib/getCurrentUserData";
 import { setLoginLoading, setLoginError, setLoginSuccess } from "../store/authSlice";
-import appLogo from "../assets/appLogo.png";
+import appLogo from "../assets/app_icon.png";
 
 const firebaseErrMessage = (err) => {
   const code = err?.code || "";

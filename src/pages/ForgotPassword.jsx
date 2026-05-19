@@ -1,6 +1,7 @@
 import React from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
+import appLogo from "../assets/app_icon.png";
 
 const ForgotPassword = () => {
   const {
@@ -16,11 +17,8 @@ const ForgotPassword = () => {
   return (
     <div className="flex items-center justify-center bg-gray-50 h-screen w-full min-w-full">
       <div className="bg-white shadow-lg rounded-2xl p-8 w-[25%] text-center">
-        {/* Logo */}
         <div className="flex justify-center mb-6">
-          <div className="bg-indigo-600 w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-xl">
-            S
-          </div>
+          <img src={appLogo} alt="App logo" className="h-24 w-auto max-w-[12rem] rounded-xl object-contain" />
         </div>
 
         {/* Heading */}
