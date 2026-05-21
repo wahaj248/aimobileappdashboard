@@ -5,8 +5,8 @@ import { db } from "../firebase";
 import { EditUserModal } from "../components/EditUserModal";
 import { ViewUserModal } from "../components/ViewUserModal";
 import { UserChatHistoryScreen } from "../components/UserChatHistoryScreen";
+import { UserDailyMealsScreen } from "../components/UserDailyMealsScreen";
 import { listRowFromUserDoc } from "../lib/userAccountState";
-import { loadAllUserDailyLogMeals } from "../lib/loadUserDailyLogMeals";
 
 function mapUserDocument(docSnap) {
   const d = docSnap.data() || {};
@@ -35,6 +35,7 @@ const UserManagement = () => {
   const [editDetail, setEditDetail] = useState(null);
   const [viewDetail, setViewDetail] = useState(null);
   const [chatUser, setChatUser] = useState(null);
+  const [mealsUser, setMealsUser] = useState(null);
   const [filter, setFilter] = useState("all");
 
   const fetchUsers = useCallback(async () => {
@@ -121,8 +122,8 @@ const UserManagement = () => {
       console.log("[View] full Firestore user document:", full);
       setEditDetail(null);
       setChatUser(null);
+      setMealsUser(null);
       setViewDetail(full);
-      void loadAllUserDailyLogMeals(user.id);
     } catch (err) {
       console.error("[View] getDoc error:", err);
       alert(err?.message || "Could not load user.");
@@ -142,6 +143,7 @@ const UserManagement = () => {
       console.log("[Edit] full Firestore user document:", full);
       setViewDetail(null);
       setChatUser(null);
+      setMealsUser(null);
       setEditDetail(full);
     } catch (err) {
       console.error("[Edit] getDoc error:", err);
@@ -154,22 +156,18 @@ const UserManagement = () => {
   const handleOpenChat = (user) => {
     setEditDetail(null);
     setViewDetail(null);
+    setMealsUser(null);
     setChatUser({ id: user.id, name: user.name, email: user.email });
-    console.log("[Chat] open history for user:", user.id);
   };
 
-  const handleLoadDailyMeals = async (user) => {
-    setLoading(true);
-    try {
-      console.info("[daily_log meals] load start:", user.id, user.name);
-      await loadAllUserDailyLogMeals(user.id);
-    } catch (err) {
-      console.error("[daily_log meals] load error:", err);
-      alert(err?.message || "Could not load daily log meals. Check Firestore rules for daily_logs.");
-    } finally {
-      setLoading(false);
-    }
+  const handleOpenMeals = (user) => {
+    setEditDetail(null);
+    setViewDetail(null);
+    setChatUser(null);
+    setMealsUser({ id: user.id, name: user.name, email: user.email });
   };
+
+  const handleCloseMeals = () => setMealsUser(null);
 
   const handleDelete = async (user) => {
     if (!window.confirm(`Delete user "${user.name}" (${user.email})? This cannot be undone.`)) return;
@@ -182,6 +180,7 @@ const UserManagement = () => {
       if (editDetail?.id === user.id) setEditDetail(null);
       if (viewDetail?.id === user.id) setViewDetail(null);
       if (chatUser?.id === user.id) setChatUser(null);
+      if (mealsUser?.id === user.id) setMealsUser(null);
     } catch (err) {
       console.error("[Delete] error:", err);
       alert(err?.message || "Delete failed. Add `allow delete` in Firestore rules for `users`.");
@@ -314,10 +313,10 @@ const UserManagement = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleLoadDailyMeals(user)}
+                          onClick={() => handleOpenMeals(user)}
                           disabled={loading}
                           className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition disabled:opacity-50"
-                          title="Load daily log meals (console)"
+                          title="Daily log meals"
                         >
                           <UtensilsCrossed size={18} />
                         </button>
@@ -365,6 +364,10 @@ const UserManagement = () => {
 
       {chatUser && (
         <UserChatHistoryScreen user={chatUser} onClose={handleCloseChat} />
+      )}
+
+      {mealsUser && (
+        <UserDailyMealsScreen user={mealsUser} onClose={handleCloseMeals} />
       )}
 
       {editDetail && (
