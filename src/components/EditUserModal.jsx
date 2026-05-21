@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { accountFieldsForActive, isUserAccountActive } from "../lib/userAccountState";
 
 /**
  * @param {{ id: string } & Record<string, unknown>} detail - Full doc: { id, ...data }
@@ -21,14 +22,14 @@ export const EditUserModal = ({ detail, onClose, onSaved }) => {
       String(detail.name ?? detail.displayName ?? detail.fullName ?? "")
     );
     setEmail(String(detail.email ?? ""));
-    const s = String(detail.status ?? "active").toLowerCase();
-    setStatus(s === "inactive" ? "inactive" : "active");
+    setStatus(isUserAccountActive(detail) ? "active" : "inactive");
   }, [detail, docId]);
 
   const handleSave = async (e) => {
     e.preventDefault();
     if (!docId) return;
-    const payload = { name: name.trim(), email: email.trim(), status };
+    const account = accountFieldsForActive(status === "active");
+    const payload = { name: name.trim(), email: email.trim(), ...account };
     console.log("[EditUserModal] save → Firestore updateDoc:", { docId, payload });
     setSaving(true);
     try {
@@ -37,7 +38,8 @@ export const EditUserModal = ({ detail, onClose, onSaved }) => {
         id: docId,
         name: payload.name || "—",
         email: payload.email || "—",
-        status: payload.status,
+        status: account.status,
+        isSuspended: account.isSuspended,
         _raw: { ...detail, ...payload },
       });
       onClose();

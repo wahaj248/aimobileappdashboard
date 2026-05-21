@@ -66,6 +66,11 @@ export function deepSerializeForDisplay(input) {
 export function formatFieldValue(key, v) {
   if (v === undefined || v === null || v === "") return "—";
   if (key.toLowerCase() === "height") return formatHeightFromCm(v);
+  if (key === "isSuspended") {
+    if (v === true) return "Suspended";
+    if (v === false) return "Active";
+    return "—";
+  }
   const dateStr = toDisplayDate(v);
   if (dateStr) return dateStr;
   if (typeof v === "boolean") return v ? "Yes" : "No";

@@ -1,21 +1,16 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { RefreshCw, Pencil, Trash2, Eye, MessageCircle } from "lucide-react";
-import { collection, doc, getDoc, getDocs, updateDoc, deleteDoc } from "firebase/firestore";
+import { RefreshCw, Pencil, Trash2, Eye, MessageCircle, UtensilsCrossed } from "lucide-react";
+import { collection, doc, getDoc, getDocs, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { EditUserModal } from "../components/EditUserModal";
 import { ViewUserModal } from "../components/ViewUserModal";
 import { UserChatHistoryScreen } from "../components/UserChatHistoryScreen";
+import { listRowFromUserDoc } from "../lib/userAccountState";
+import { loadAllUserDailyLogMeals } from "../lib/loadUserDailyLogMeals";
 
 function mapUserDocument(docSnap) {
   const d = docSnap.data() || {};
-  const statusRaw = (d.status ?? "active").toString().toLowerCase();
-  return {
-    id: docSnap.id,
-    name: d.name ?? d.displayName ?? d.fullName ?? "—",
-    email: d.email ?? "—",
-    status: statusRaw === "inactive" ? "inactive" : "active",
-    _raw: d,
-  };
+  return { ...listRowFromUserDoc(d, docSnap.id), _raw: d };
 }
 
 const FIRESTORE_RULES_SNIPPET = `rules_version = '2';
@@ -86,21 +81,10 @@ const UserManagement = () => {
     );
   }, [users, searchValue, filter]);
 
-  const handleToggleStatus = async (user) => {
-    const nextStatus = user.status === "active" ? "inactive" : "active";
-    console.log("Toggle user status → Firestore:", { docId: user.id, status: nextStatus });
-    setLoading(true);
-    try {
-      await updateDoc(doc(db, "users", user.id), { status: nextStatus });
-      setUsers((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u))
-      );
-    } catch (err) {
-      console.error("Firestore update error:", err);
-      alert(err?.message || "Could not update status. Check Firestore rules.");
-    } finally {
-      setLoading(false);
-    }
+  const handleAccountUpdated = (updated) => {
+    const row = listRowFromUserDoc(updated, updated.id);
+    setUsers((prev) => prev.map((u) => (u.id === updated.id ? { ...u, ...row, _raw: updated } : u)));
+    setViewDetail((prev) => (prev?.id === updated.id ? { ...prev, ...updated } : prev));
   };
 
   const handleCloseEditModal = () => {
@@ -138,6 +122,7 @@ const UserManagement = () => {
       setEditDetail(null);
       setChatUser(null);
       setViewDetail(full);
+      void loadAllUserDailyLogMeals(user.id);
     } catch (err) {
       console.error("[View] getDoc error:", err);
       alert(err?.message || "Could not load user.");
@@ -171,6 +156,19 @@ const UserManagement = () => {
     setViewDetail(null);
     setChatUser({ id: user.id, name: user.name, email: user.email });
     console.log("[Chat] open history for user:", user.id);
+  };
+
+  const handleLoadDailyMeals = async (user) => {
+    setLoading(true);
+    try {
+      console.info("[daily_log meals] load start:", user.id, user.name);
+      await loadAllUserDailyLogMeals(user.id);
+    } catch (err) {
+      console.error("[daily_log meals] load error:", err);
+      alert(err?.message || "Could not load daily log meals. Check Firestore rules for daily_logs.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDelete = async (user) => {
@@ -316,6 +314,15 @@ const UserManagement = () => {
                         </button>
                         <button
                           type="button"
+                          onClick={() => handleLoadDailyMeals(user)}
+                          disabled={loading}
+                          className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition disabled:opacity-50"
+                          title="Load daily log meals (console)"
+                        >
+                          <UtensilsCrossed size={18} />
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => handleView(user)}
                           disabled={loading}
                           className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-50"
@@ -331,19 +338,6 @@ const UserManagement = () => {
                           title="Delete"
                         >
                           <Trash2 size={18} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleStatus(user)}
-                          disabled={loading}
-                          className={`px-3 py-2 rounded-lg transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
-                            user.status === "active"
-                              ? "bg-red-50 text-red-700 hover:bg-red-100"
-                              : "bg-green-50 text-green-700 hover:bg-green-100"
-                          }`}
-                          title="Toggle active/inactive"
-                        >
-                          {user.status === "active" ? "Deactivate" : "Activate"}
                         </button>
                       </div>
                     </td>
@@ -362,7 +356,11 @@ const UserManagement = () => {
       </div>
 
       {viewDetail && (
-        <ViewUserModal detail={viewDetail} onClose={handleCloseViewModal} />
+        <ViewUserModal
+          detail={viewDetail}
+          onClose={handleCloseViewModal}
+          onAccountUpdated={handleAccountUpdated}
+        />
       )}
 
       {chatUser && (
