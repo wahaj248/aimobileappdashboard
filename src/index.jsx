@@ -9,7 +9,6 @@ import { store, persistor } from "./store/store";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserManagement from "./pages/UserManagement";
-import SearchKeywords from "./pages/SearchKeywords";
 import OrderDetails from "./pages/OrderDetails";
 import Profile from "./pages/Profile";
 import Layout from "./components/Layout";
@@ -28,7 +27,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 
             <Route path="/dashboard" element={<Navigate to="/users" replace />} />
             <Route path="/users" element={<Layout><UserManagement /></Layout>} />
-            <Route path="/search-keywords" element={<Layout><SearchKeywords /></Layout>} />
             <Route path="/order/:id" element={<Layout><OrderDetails /></Layout>} />
             <Route path="/profile" element={<Layout><Profile /></Layout>} />
             <Route path="*" element={<Navigate to="/" replace />} />

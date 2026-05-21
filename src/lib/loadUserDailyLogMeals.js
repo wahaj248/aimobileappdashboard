@@ -17,6 +17,13 @@ function parseDateKey(id) {
   return d ? d.getTime() : 0;
 }
 
+/** @param {string} dateKey e.g. "May 14, 2026" */
+export function formatDateKeyForDisplay(dateKey) {
+  const d = parseDateKeyToDate(dateKey);
+  if (!d) return String(dateKey ?? "—");
+  return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
+
 /** @param {string} dateKey @param {number} days inclusive calendar days ending today */
 export function isDateKeyWithinLastNDays(dateKey, days) {
   const d = parseDateKeyToDate(dateKey);

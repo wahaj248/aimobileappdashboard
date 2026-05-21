@@ -1,18 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, RefreshCw } from "lucide-react";
-import { loadAllUserDailyLogMeals, isDateKeyWithinLastNDays } from "../lib/loadUserDailyLogMeals";
+import {
+  loadAllUserDailyLogMeals,
+  isDateKeyWithinLastNDays,
+  formatDateKeyForDisplay,
+} from "../lib/loadUserDailyLogMeals";
 
 const DATE_FILTERS = [
   { id: "all", label: "All dates" },
   { id: "last3", label: "Last 3 days" },
   { id: "last7", label: "Last 7 days" },
 ];
-
-function num(v) {
-  if (v == null || v === "") return "—";
-  if (typeof v === "number" && Number.isFinite(v)) return String(v);
-  return String(v);
-}
 
 /**
  * @param {{ id: string; name?: string; email?: string }} user
@@ -70,7 +68,8 @@ export const UserDailyMealsScreen = ({ user, onClose }) => {
       const name = String(m.name ?? "").toLowerCase();
       const type = String(m.type ?? "").toLowerCase();
       const dk = String(m.dateKey ?? "").toLowerCase();
-      return name.includes(q) || type.includes(q) || dk.includes(q);
+      const dkDisplay = formatDateKeyForDisplay(m.dateKey).toLowerCase();
+      return name.includes(q) || type.includes(q) || dk.includes(q) || dkDisplay.includes(q);
     });
   }, [meals, searchValue, dateFilter]);
 
@@ -165,7 +164,7 @@ export const UserDailyMealsScreen = ({ user, onClose }) => {
               </div>
             ) : (
               <div className="overflow-auto h-full">
-                <table className="w-full min-w-[900px] text-sm">
+                <table className="w-full text-sm">
                   <thead className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200">
                     <tr>
                       <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
@@ -180,37 +179,19 @@ export const UserDailyMealsScreen = ({ user, onClose }) => {
                       <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
                         Time
                       </th>
-                      <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                        Cal
-                      </th>
-                      <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                        P
-                      </th>
-                      <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                        C
-                      </th>
-                      <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                        F
-                      </th>
-                      <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                        Sugar
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredMeals.map((m) => (
                       <tr key={`${m.dateKey}_${m.id}`} className="hover:bg-slate-50/80">
-                        <td className="px-4 py-3 text-slate-600 whitespace-nowrap font-medium">{m.dateKey}</td>
+                        <td className="px-4 py-3 text-slate-600 whitespace-nowrap font-medium">
+                          {formatDateKeyForDisplay(m.dateKey)}
+                        </td>
                         <td className="px-4 py-3 text-slate-900 font-medium max-w-[220px]">
                           <span className="line-clamp-2">{m.name ?? "—"}</span>
                         </td>
                         <td className="px-4 py-3 text-slate-600 capitalize whitespace-nowrap">{m.type ?? "—"}</td>
                         <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{m.time ?? "—"}</td>
-                        <td className="px-4 py-3 text-right text-slate-800 tabular-nums">{num(m.calories)}</td>
-                        <td className="px-4 py-3 text-right text-slate-800 tabular-nums">{num(m.protein)}</td>
-                        <td className="px-4 py-3 text-right text-slate-800 tabular-nums">{num(m.carbs)}</td>
-                        <td className="px-4 py-3 text-right text-slate-800 tabular-nums">{num(m.fat)}</td>
-                        <td className="px-4 py-3 text-right text-slate-800 tabular-nums">{num(m.sugar)}</td>
                       </tr>
                     ))}
                   </tbody>

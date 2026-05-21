@@ -40,9 +40,6 @@ const Header = () => {
           </Link>
           <nav className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
             <Link to="/users" className="font-medium text-gray-700 hover:text-indigo-600 whitespace-nowrap">Users</Link>
-            <Link to="/search-keywords" className="font-medium text-gray-700 hover:text-indigo-600 whitespace-nowrap">
-              Search Keywords
-            </Link>
             <Link to="/profile" className="font-medium text-gray-700 hover:text-indigo-600 whitespace-nowrap">Profile</Link>
           </nav>
         </div>
