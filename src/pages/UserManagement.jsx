@@ -6,7 +6,13 @@ import { EditUserModal } from "../components/EditUserModal";
 import { ViewUserModal } from "../components/ViewUserModal";
 import { UserChatHistoryScreen } from "../components/UserChatHistoryScreen";
 import { UserDailyMealsScreen } from "../components/UserDailyMealsScreen";
-import { listRowFromUserDoc } from "../lib/userAccountState";
+import {
+  listRowFromUserDoc,
+  subscriptionFieldsFromUserDoc,
+  subscriptionStatusLabel,
+  subscriptionExpiresLabel,
+} from "../lib/userAccountState";
+import { toDisplayDate } from "../lib/userDocumentDisplay";
 
 function mapUserDocument(docSnap) {
   const d = docSnap.data() || {};
@@ -46,6 +52,22 @@ const UserManagement = () => {
       const snap = await getDocs(collection(db, "users"));
       const rows = snap.docs.map(mapUserDocument);
       console.log("Firestore users collection:", rows);
+      console.table(
+        rows.map((r) => {
+          const sub = subscriptionFieldsFromUserDoc(r._raw ?? r);
+          return {
+            id: r.id,
+            name: r.name,
+            email: r.email,
+            trialUsed: sub.trialUsed,
+            subscriptionExpiresAt:
+              toDisplayDate(sub.subscriptionExpiresAt) ?? sub.subscriptionExpiresAt ?? "—",
+            isSubscribed: sub.isSubscribed,
+            subscriptionPlanId: sub.subscriptionPlanId ?? "—",
+            subscriptionPlanName: sub.subscriptionPlanName ?? "—",
+          };
+        })
+      );
       setUsers(rows);
     } catch (err) {
       console.error("Firestore users read error:", err);
@@ -272,6 +294,8 @@ const UserManagement = () => {
                 <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-4">Name</th>
                 <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-4">Email</th>
                 <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-4">Status</th>
+                <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-4">Subscription</th>
+                <th className="text-left text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-4">Expires at</th>
                 <th className="text-right text-xs font-semibold text-gray-600 uppercase tracking-wider px-6 py-4">Actions</th>
               </tr>
             </thead>
@@ -290,6 +314,23 @@ const UserManagement = () => {
                       >
                         {user.status || "—"}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {(() => {
+                        const label = subscriptionStatusLabel(user.isSubscribed);
+                        const pill =
+                          label === "Active"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : label === "Expired"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-gray-100 text-gray-600";
+                        return (
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${pill}`}>{label}</span>
+                        );
+                      })()}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 whitespace-nowrap">
+                      {subscriptionExpiresLabel(user.subscriptionExpiresAt)}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-1 flex-wrap">
@@ -344,7 +385,7 @@ const UserManagement = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500 text-sm">
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500 text-sm">
                     {loading ? "Loading…" : "No users in Firestore collection `users`."}
                   </td>
                 </tr>
